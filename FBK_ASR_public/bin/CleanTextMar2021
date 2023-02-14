@@ -1,0 +1,253 @@
+#!/bin/sh
+
+# trying to add a sort of queue system - max N processes allowed
+# added possibility to control from outside what to do
+# added possibility to skip already built files
+# corporaprefix="/vox06/ssi/gretter/corpora_it/text/"
+# outputprefix="/vox21/ssi/gretter/tmp/"
+# list="info/jumas918.txt info/dettoscritto.txt info/rep2000.txt info/camera.txt" 
+# version="v3"
+
+#basedir="/data/disk1/data/kore/gretter/NorTex";
+basedir="."
+
+. $basedir/here.sh
+
+# whattodo="buildbase+mergelex+buildclean+force"
+
+corporaprefix="$1";
+outputprefix="$2";
+list="$3";
+version="$4";
+allblex="$5";
+language="$6"; # ita
+whattodo="$7"
+encoding=$8   # utf8, iso - coding dei dati da processare
+finalcoding=$9 # i2u, none - codifica di arrivo 
+shift
+onlyupper2lower=$9
+shift
+RFN=$9
+
+buildbase=`echo 0$whattodo | sed 's/buildbase/1/' | tr -d "a-z+" |awk '{printf "%d",$1}'`
+mergelex=`echo 0$whattodo | sed 's/mergelex/1/' | tr -d "a-z+"|awk '{printf "%d",$1}'`
+buildclean=`echo 0$whattodo | sed 's/buildclean/1/' | tr -d "a-z+"|awk '{printf "%d",$1}'`
+force=`echo 0$whattodo | sed 's/force/1/' | tr -d "a-z+"|awk '{printf "%d",$1}'`
+
+echo;echo "$0 parameters:"
+echo "corporaprefix   $corporaprefix" 
+echo "outputprefix    $outputprefix" 
+echo "list            $list"
+echo "buildbase       $buildbase" 
+echo "mergelex        $mergelex"
+echo "buildclean      $buildclean"
+echo "force           $force"
+echo "encoding        $encoding"
+echo "finalcoding     $finalcoding"
+echo "onlyupper2lower $onlyupper2lower"
+
+
+toomany()
+{
+    file=$1
+    enne=$2     # number of runned processes so far
+    # maxproc=1  # era 7 # max number of running processes allowed at the same time
+    # 7 ok per buildbase - 1 ok per buildclean con lessici enormi
+    # meglio passarlo come parametro.. ma come?
+    touch $file
+    cat $file.* > $file
+    n=`cat $file | wc -l`; # ended processes
+    runproc=`expr $enne - $n` # currently running processes
+    echo "runproc= $runproc (enne= $enne - n= $n) maxproc= $maxproc"
+    while [ $runproc -ge $maxproc ]
+    do  d=`date`
+	echo "runproc= $runproc (enne= $enne - n= $n) - waiting - $d"
+        sleep 60  # 300 -> 5 minuti 
+	cat $file.* > $file
+        n=`cat $file | wc -l`;
+	runproc=`expr $enne - $n` # currently running processes
+    done
+    d=`date`
+    echo "RUN ANOTHER ONE - runproc= $runproc (enne= $enne - n= $n) - waiting - $d";echo
+}
+
+wait()
+{
+    file=$1
+    enne=$2
+    echo;echo "wait enne $enne"
+    touch $file
+    cat $file.* > $file
+    # n=0;
+    n=`cat $file | wc -l`;
+    while [ $n -lt $enne ]
+    do  d=`date`
+        echo "n = $n ; enne = $enne ; $d" 
+        n=`cat $file | wc -l`;
+        sleep 60  # 300 -> 5 minuti 
+	cat $file.* > $file
+    done
+    d=`date`
+    echo "ESCOOOO n = $n ; enne = $enne ; $d";echo
+}
+
+endfile=$outputprefix/endfile.$$
+report=$outputprefix/report.$$
+counter=0;
+\rm -f $endfile $endfile.*
+
+maxproc=7  # era 7 # max number of running processes allowed at the same time
+
+if [ "$buildbase" = 1 ]
+then for file in `echo $list | sed "s/@@@/ /g"`
+     do l=$file
+	info_lbl=`echo $l | cut -d":" -f2`
+	echo "processing $l into $outputprefix/${info_lbl}_$version.basetxt.gz - force $force"
+	if [ ! -s $outputprefix/${info_lbl}_$version.basetxt.gz -o $force = 1 ]
+	then echo building $outputprefix/${info_lbl}_$version.basetxt.gz
+	     #	  $SgePeSubmit -log $report.1.$counter 1-1 5G $NormTex/CleanCorpora.sh \ 
+	     $NormTex/CleanCorpora.sh \
+		 @list=$l \
+		 @language=$language \
+		 @encoding=$encoding \
+		 @finalcoding=$finalcoding \
+		 @corporaprefix=$corporaprefix \
+		 @outputprefix=$outputprefix \
+		 @getstat=1 \
+		 @buildbase=1 \
+		 @mergelex=0 \
+		 @buildclean=0 \
+		 @head=cat \
+		 @baselex=$outputprefix/$allblex \
+		 @countitem=80 \
+		 @percitem=10 \
+		 @numproc=1 \
+		 @onlyupper2lower=$onlyupper2lower \
+		 @RFN=$RFN \
+		 @vid=$version \
+		 @endfile=$endfile.$counter > $outputprefix/CleanCorpora1.$counter.$$.rep &
+	     
+	     # @list=\"$l\" 
+	     # @head="head -10000" \
+		 # @head=cat \
+		 
+	     counter=`expr $counter + 1`;
+	     toomany $endfile $counter
+
+	else echo file $outputprefix/${info_lbl}_$version.basetxt.gz already existing and no need to force - skipping
+	fi
+	
+     done
+     wait $endfile $counter
+     cat $outputprefix/CleanCorpora1.*.$$.rep
+fi
+
+maxproc=1  # era 7 # max number of running processes allowed at the same time
+
+if [ "$mergelex" = 1 ]
+then
+    if [ ! -s $outputprefix/${allblex}_${version}_mod.baselex  -o $force = 1 ]
+    then echo building $outputprefix/${allblex}_${version}_mod.baselex 
+	 #	$SgePeSubmit -log $report.2  1-1 5G $NormTex/CleanCorpora.sh \ 
+	 $NormTex/CleanCorpora.sh \
+	     @list=$list \
+	     @language=$language \
+	     @encoding=$encoding \
+	     @finalcoding=$finalcoding \
+	     @corporaprefix=$corporaprefix \
+	     @outputprefix=$outputprefix \
+	     @getstat=0 \
+	     @buildbase=0 \
+	     @mergelex=1 \
+	     @buildclean=0 \
+	     @head="cat" \
+	     @baselex=$outputprefix/$allblex \
+	     @countitem=80 \
+	     @percitem=10 \
+	     @numproc=1 \
+	     @onlyupper2lower=$onlyupper2lower \
+	     @RFN=$RFN \
+	     @vid=$version \
+	     @endfile=$endfile.$counter > $outputprefix/CleanCorpora2.$counter.$$.rep &
+	 
+	 # @head=\"head -10000\" \ 
+	     
+	 counter=`expr $counter + 1`;
+    else echo file $outputprefix/${allblex}_${version}_mod.baselex already existing and no need to force - skipping
+    fi
+    
+    wait $endfile $counter
+    cat $outputprefix/CleanCorpora2.*.$$.rep
+fi
+
+# counter=0;
+# \rm -f $endfile
+
+maxproc=1  # era 7 # max number of running processes allowed at the same time
+
+if [ "$buildclean" = 1 ]
+then for file in `echo $list | sed "s/@@@/ /g"`
+     do l=$file
+	info_lbl=`echo $l | cut -d":" -f2`
+	echo "processing $l into $outputprefix/${info_lbl}_$version.normtxt.gz - force $force"
+	
+	if [ ! -s $outputprefix/${info_lbl}_$version.normtxt.gz -o $force = 1 ]
+	then echo building $outputprefix/${info_lbl}_$version.normtxt.gz
+
+	     # $SgePeSubmit -log $report.3.$counter  1-1 5G $NormTex/CleanCorpora.sh \
+
+	     $NormTex/CleanCorpora.sh \
+		 @list=$l \
+		 @language=$language \
+		 @encoding=$encoding \
+		 @finalcoding=$finalcoding \
+		 @corporaprefix=$corporaprefix \
+		 @outputprefix=$outputprefix \
+		 @getstat=0 \
+		 @buildbase=0 \
+		 @mergelex=0 \
+		 @buildclean=1 \
+		 @head="cat" \
+		 @baselex=$outputprefix/$allblex \
+		 @countitem=80 \
+		 @percitem=10 \
+		 @numproc=1 \
+		 @vid=$version \
+		 @onlyupper2lower=$onlyupper2lower \
+		 @RFN=$RFN \
+		 @addsentenceboundary=1 \
+		 @endfile=$endfile.$counter > $outputprefix/CleanCorpora3.$counter.$$.rep &
+
+	     # @head=\"head -10000\" \ 
+	     #      @head="cat" \ 
+	     counter=`expr $counter + 1`;
+	     toomany $endfile $counter
+
+	else echo file $outputprefix/${info_lbl}_$version.normtxt.gz already existing and no need to force - skipping
+	fi
+	
+     done
+     
+     wait $endfile $counter
+     cat $outputprefix/CleanCorpora3.*.$$.rep
+fi
+
+# \rm -f $endfile
+
+echo report in $report
+
+exit
+
+
+awk '{print $4}' /vox21/ssi/gretter/tmp/ALL_v1_mod.baselex | sort > asd1
+
+zcat /vox21/ssi/gretter/tmp/*.normtxt.gz | separa | sort -u > asd2
+
+zcat /vox21/ssi/gretter/tmp/*.nopunct.gz | separa | sort -u > asd3
+
+
+# zcat tmp/JUMAS918_v2.nopunct.gz      | ~/bin/chars2txt_v2 | tr "a-z_" "A-Z " | tr '`' "'" | tr "0-9&" "                       " | gzip > tmp/JUMAS918_v2.ascii.gz
+# zcat tmp/DETTOSCRITTO_v2.nopunct.gz  | ~/bin/chars2txt_v2 | tr "a-z_" "A-Z " | tr '`' "'" | tr "0-9&" "                       " | gzip > tmp/DETTOSCRITTO_v2.ascii.gz
+
+# grep -v ";;" /vox07/ssi/gretter/jumas/napoli_xxxx_yyyy_ch1_20070314-1104.stm | grep -v excluded_region | cut -d " " -f 7- | ~/bin/conv3_utf-iso U2I | ~/bin/chars2txt_v2 | ~/bin/NumbersIt.pl -d2l -jointeens | tr "a-z_" "A-Z " | tr '`' "'" | tr -d "?" > /vox07/ssi/gretter/jumas/napoli_xxxx_yyyy_ch1_20070314-1104.ascii
+

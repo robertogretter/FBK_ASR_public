@@ -1,0 +1,14 @@
+{
+  "bos_token": "<s>",
+  "do_lower_case": false,
+  "eos_token": "</s>",
+  "model_max_length": 1000000000000000019884624838656,
+  "name_or_path": "models/wavlm-large-it-cv10-100p/checkpoint-70800",
+  "pad_token": "[PAD]",
+  "processor_class": "Wav2Vec2ProcessorWithLM",
+  "replace_word_delimiter_char": " ",
+  "special_tokens_map_file": null,
+  "tokenizer_class": "Wav2Vec2CTCTokenizer",
+  "unk_token": "[UNK]",
+  "word_delimiter_token": "|"
+}

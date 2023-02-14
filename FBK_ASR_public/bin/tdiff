@@ -1,0 +1,80 @@
+#!/usr/bin/perl
+
+
+if($#ARGV eq 1){
+    $t1=$ARGV[0];
+    $t2=$ARGV[1];
+    $op="-";
+}
+elsif($#ARGV eq 2){
+    $t2=$ARGV[0];
+    $op=$ARGV[1];
+    $t1=$ARGV[2];
+}
+else{
+        print STDERR "\nUsage: $0 time1 time2\n";
+        print STDERR "\nUsage: $0 time2 +/- time1\n";
+        print STDERR "\n       ritorna time2 +/- time1\n\n";
+        exit;
+}
+
+$w[0]=3600;
+$w[1]=60;
+$w[2]=1;
+
+$ti1=0;
+$ti2=0;
+
+
+@tt=split(/[.:]/,$t1);
+for($k=0;$k<3;$k++){
+	$ti1 += $tt[$k]*$w[$k];
+}
+
+@tt=split(/[.:]/,$t2);
+for($k=0;$k<3;$k++){
+	$ti2 += $tt[$k]*$w[$k];
+}
+
+
+#  $i=$ti2-$ti1;
+
+$end="\n";
+if($t1 > $t2 && $op == "-"){
+    # $aa=$t1; $t1=$t2; $t2=$aa;
+    $ti2+=3600*24;
+    $end=" (crossday)\n";
+}
+
+$i=eval "$ti2 $op $ti1";
+
+&printhour($ti2, " $op ");
+&printhour($ti1, " = ");
+if($i>=0){
+	&printhour($i, $end);
+}
+else{
+	printf("-");
+	&printhour(-$i, $end);
+}
+
+
+sub printhour
+{
+	local ($i, $sep) = @_;
+
+	local($k,$j);
+	for($k=0;$k<3;$k++){
+		$j = int($i/$w[$k]);
+		$i = $i-$j*$w[$k];
+		if($j>=10){
+			printf("%2d%s", $j, $k==2 ? $sep : ":");
+		}
+		else{
+			printf("0%d%s", $j, $k==2 ? $sep : ":");
+		}
+	}
+}
+
+
+
