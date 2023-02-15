@@ -1,48 +1,54 @@
 # FBK_ASR_public
 Scripts to perform Italian ASR using a WavLM E2E system; LM adaptation is also provided. 
 
-                     FBK - SpeechTek, February 2023
-                    Marco Matassoni, Roberto Gretter
-                     matasso@fbk.eu, gretter@fbk.eu
+##### FBK - SpeechTek, February 2023
+##### Marco Matassoni, Roberto Gretter
+##### matasso@fbk.eu, gretter@fbk.eu
 
 In this repository we put some script and data to perform Language Model (LM) adaptation and automatic Speech Recognition (ASR) on Italian, using WavLM (https://huggingface.co/docs/transformers/model_doc/wavlm), fine-tuned on some hundreds of Italian audio data.
 
-Huge files to download from Google Drive folder FBK_ASR_public_data (link: https://drive.google.com/drive/folders/10kL8G-SU5meqXw0H3b0OLEOVhSvIyk5q )  and upload into FBK_ASR_public/:
+There are some huge files (.zip) to download from Google Drive folder FBK_ASR_public_data (link: https://drive.google.com/drive/folders/10kL8G-SU5meqXw0H3b0OLEOVhSvIyk5q ) and upload into FBK_ASR_public/:
 
-FBK_ASR_public/corpora/italian/
-    download:  ************************************************/italian.zip
-    extract:   unzip ~/Downloads/italian.zip
-    move:      mv italian corpora/
-FBK_ASR_public/wavlm-large-it-cv10/
-FBK_ASR_public/wavlm-large-it-cv10_tutto.3.256K.msb.p2/
-    download:  ************************************************/wavlm-large-it-cv10.zip
-    extract:   unzip ~/Downloads/wavlm-large-it-cv10.zip
-FBK_ASR_public/NorTex/
-    download:  ************************************************/NorTex.zip
-    extract:   unzip ~/Downloads/NorTex.zip
-FBK_ASR_public/audio_samples/
-    download:  ************************************************/audio_samples.zip
-    extract:   unzip ~/Downloads/audio_samples.zip
+```
+    download from:  FBK_ASR_public_data / **italian.zip**
+    extract:        unzip ~/Downloads/italian.zip
+    move:           mv italian corpora/
+    you should get: FBK_ASR_public/corpora/italian/
+```
+```
+    download from:  FBK_ASR_public_data / **wavlm-large-it-cv10.zip**
+    extract:        unzip ~/Downloads/wavlm-large-it-cv10.zip
+    you should get: FBK_ASR_public/wavlm-large-it-cv10/
+    you should get: FBK_ASR_public/wavlm-large-it-cv10_tutto.3.256K.msb.p2/
+```
+```
+    download from:  FBK_ASR_public_data / NorTex.zip
+    extract:        unzip ~/Downloads/NorTex.zip
+    you should get: FBK_ASR_public/NorTex/
+```
+```
+    download from:  FBK_ASR_public_data / audio_samples.zip
+    extract:        unzip ~/Downloads/audio_samples.zip
+    you should get: FBK_ASR_public/audio_samples/
+```
+```
+    download from:  http://vectors.nlpl.eu/repository/20/52.zip
+    extract:        unzip ~/Downloads/52.zip model.bin
+    move:           mv model.bin corpora/italian/w2v_52_model.bin
+    you should get: FBK_ASR_public/corpora/italian/w2v_52_model.bin
+```
 
-FBK_ASR_public/corpora/italian/w2v_52_model.bin
-    download:  http://vectors.nlpl.eu/repository/20/52.zip
-    extract:   unzip ~/Downloads/52.zip model.bin
-    move:      mv model.bin corpora/italian/w2v_52_model.bin
-
-
-# You should have python installed, together with all is needed, check here:
-# https://huggingface.co/docs/transformers/model_doc/wavlm
-# (make sure that your python is at least version 3.8.11)
-./python --version         -->   Python 3.8.11
-
-
+#### You should have python installed, together with all is needed, check here:
+```
+    https://huggingface.co/docs/transformers/model_doc/wavlm
+    (make sure that your python is at least version 3.8.11)
+    ./python --version         -->   Python 3.8.11
+```
 
 In particular there are:
-
-
-ReadMeFBK_ASR.txt             # documentation, this file
-mtsummit2021-seeds-GMF.pdf    # documentation, paper describing the adaptation method for LM, using a few data.
-
+```
+    ReadMeFBK_ASR.txt             # documentation, this file
+    mtsummit2021-seeds-GMF.pdf    # documentation, paper describing the adaptation method for LM, using a few data.
 
 ./audio_samples/
     # folder containing a couple of audio files in dentistry domain (.wav) with the corresponding manual transcription (.txt)
@@ -137,4 +143,5 @@ Results highligh that, on this small and not statistically relevant sample:
 - even without LM (output_p0) the ASR is reasonable (~13% WER);
 - using a generic LM improves (~10% WER); the pruned model is much smaller (470MB vs 2.3GB) than the complete but they have similar performance;
 - using an adapted LM improves a little over a generic one (~9% WER); again the pruned model is much smaller (300MB vs 5.3GB) than the complete but they have similar performance.
+```
 
